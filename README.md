@@ -1,3 +1,17 @@
+# ❄️ Clima Automatico – Risparmio Energetico  
+**Blueprint per Home Assistant**  
+_By [Angelofsin666](https://github.com/Angelofsin666)_
+
+---
+
+## 📲 Installa ora in Home Assistant
+
+[![Apri in Home Assistant](https://my.home-assistant.io/badges/blueprint.svg)](https://my.home-assistant.io/redirect/blueprint_import?blueprint_url=https://github.com/Angelofsin666/Climate-Pro/raw/main/blueprint.yaml)
+
+---
+
+
+
 # ❄️ Clima Automatico – Risparmio Energetico | Energy-saving Climate Automation
 
 ---
