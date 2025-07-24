@@ -74,3 +74,6 @@ input_boolean:
   deumidificatore_on:
     name: Deumidificatore On
     initial: false
+
+
+<p align="center"> <a href="https://my.home-assistant.io/redirect/blueprint_import?blueprint_url=https://github.com/Angelofsin666/Climate-Pro/raw/main/blueprint.yaml" target="_blank"> <img alt="Add to Home Assistant" src="https://my.home-assistant.io/badges/blueprint.svg" style="width:200px"/> </a> </p> ```
