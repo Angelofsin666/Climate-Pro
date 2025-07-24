@@ -6,9 +6,8 @@ _By [Angelofsin666](https://github.com/Angelofsin666)_
 
 ## 📲 Installa ora in Home Assistant
 
-[![Apri in Home Assistant](https://my.home-assistant.io/badges/blueprint.svg)](https://my.home-assistant.io/redirect/blueprint_import?blueprint_url=https://github.com/Angelofsin666/Climate-Pro/raw/main/blueprint.yaml)
+[![Apri in Home Assistant](https://my.home-assistant.io/badges/blueprint.svg)](https://my.home-assistant.io/redirect/blueprint_import?blueprint_url=https://raw.githubusercontent.com/Angelofsin666/Climate-Pro/main/ClimatePro.yaml)
 
----
 
 
 
