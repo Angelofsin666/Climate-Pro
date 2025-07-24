@@ -1,0 +1,254 @@
+blueprint:
+  name: "❄️ Clima Automatico – Risparmio Energetico | Energy-saving Climate"
+  description: >
+    🇮🇹 Questo blueprint automatizza il climatizzatore in base alla temperatura media di uno o più sensori,  
+    alla presenza in casa, allo stato delle finestre e alla fascia oraria configurata.  
+    Permette di risparmiare energia alternando la modalità climatizzazione e deumidificazione:  
+    - Se la temperatura supera la soglia alta configurata, attiva la climatizzazione (o ritorna ad essa se si era in deumidificazione).  
+    - Se la temperatura scende sotto la soglia bassa configurata, attiva la modalità deumidificazione.  
+    L'automazione funziona solo se almeno una persona è in casa e tutte le finestre sono chiuse.  
+    Supporta notifiche opzionali e più sensori di temperatura (con media).  
+
+    🇬🇧 This blueprint automates the AC based on the average temperature from one or more sensors,  
+    presence at home, window status, and configured time range.  
+    It saves energy by switching between climate and dehumidify modes:  
+    - If temperature rises above the high threshold, it activates climate mode (or returns to it from dehumidify).  
+    - If temperature falls below the low threshold, it activates dehumidify mode.  
+    The automation runs only if someone is home and all windows are closed.  
+    Supports optional notifications and multiple temperature sensors (averaged).  
+
+  domain: automation
+
+  input:
+    temp_sensors:
+      name: ❄️ Sensori di temperatura | Temperature sensors
+      description: >
+        🇮🇹 Seleziona uno o più sensori di temperatura (viene usata la media).
+        🇬🇧 Select one or more temperature sensors (average is used).
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: sensor
+          device_class: temperature
+
+    presence_entities:
+      name: 🧍‍♂️ Persone presenti | Presence entities
+      description: >
+        🇮🇹 L'automazione funziona solo se almeno una di queste entità è "home".
+        🇬🇧 Automation only runs if at least one of these is "home".
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: person
+
+    windows:
+      name: 🪟 Finestre da monitorare | Windows to monitor
+      description: >
+        🇮🇹 Tutte queste finestre devono essere chiuse (off).
+        🇬🇧 All selected windows must be closed (off).
+      selector:
+        entity:
+          multiple: true
+          filter:
+            domain: binary_sensor
+            device_class: window
+
+    time_start:
+      name: ⏰ Ora inizio | Start time
+      default: "08:00:00"
+      selector:
+        time:
+
+    time_end:
+      name: ⏰ Ora fine | End time
+      default: "22:30:00"
+      selector:
+        time:
+
+    temp_high:
+      name: 🔥 Temperatura alta | High temperature threshold
+      default: 27
+      selector:
+        number:
+          min: 20
+          max: 30
+          unit_of_measurement: °C
+          mode: slider
+
+    temp_low:
+      name: ❄️ Temperatura bassa | Low temperature threshold
+      default: 25.5
+      selector:
+        number:
+          min: 18
+          max: 27
+          unit_of_measurement: °C
+          mode: slider
+
+    climate_script:
+      name: 🌀 Script climatizzazione | AC script
+      description: Script da avviare per la modalità climatizzazione
+      selector:
+        entity:
+          filter:
+            domain: script
+
+    dehumid_script:
+      name: 💧 Script deumidificatore | Dehumidifier script
+      description: Script da avviare per la modalità deumidificatore
+      selector:
+        entity:
+          filter:
+            domain: script
+
+    return_to_climate_script:
+      name: 🔄 Script ritorno climatizzazione | Return to climate script
+      description: Script che riporta il clima da deumidificazione a climatizzazione
+      selector:
+        entity:
+          filter:
+            domain: script
+
+    clima_on_boolean:
+      name: ✅ Boolean clima attivo | AC on boolean
+      selector:
+        entity:
+          filter:
+            domain: input_boolean
+
+    dehumid_on_boolean:
+      name: ✅ Boolean deumidificatore attivo | Dehumidifier on boolean
+      selector:
+        entity:
+          filter:
+            domain: input_boolean
+
+    notify_device:
+      name: 📱 Dispositivo per notifiche (opzionale) | Notification device (optional)
+      default: []
+      selector:
+        device:
+          multiple: false
+          filter:
+            integration: mobile_app
+
+mode: single
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input temp_sensors
+    above: !input temp_high
+    id: caldo
+  - platform: numeric_state
+    entity_id: !input temp_sensors
+    below: !input temp_low
+    id: fresco
+  - platform: state
+    entity_id: !input temp_sensors
+    id: cambio_temp
+
+condition:
+  - condition: time
+    after: !input time_start
+    before: !input time_end
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: !input presence_entities
+        state: "home"
+  - condition: and
+    conditions:
+      - condition: state
+        entity_id: !input windows
+        state: "off"
+
+action:
+  - choose:
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: caldo
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: cambio_temp
+                  - condition: numeric_state
+                    entity_id: !input temp_sensors
+                    above: !input temp_high
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input clima_on_boolean
+                    state: "off"
+                sequence:
+                  - service: script.turn_on
+                    target:
+                      entity_id: !input climate_script
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input clima_on_boolean
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input dehumid_on_boolean
+
+              - conditions:
+                  - condition: state
+                    entity_id: !input dehumid_on_boolean
+                    state: "on"
+                sequence:
+                  - service: script.turn_on
+                    target:
+                      entity_id: !input return_to_climate_script
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input clima_on_boolean
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input dehumid_on_boolean
+
+          - choose:
+              - conditions:
+                  - condition: device
+                    device_id: !input notify_device
+                sequence:
+                  - service: notify.mobile_app_{{ device_attr(notify_device, 'name') | lower | replace(' ', '_') }}
+                    data:
+                      message: "❄️ Climatizzatore attivato (modalità climatizzazione)"
+                      title: "Clima automatico"
+
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: fresco
+              - condition: and
+                conditions:
+                  - condition: trigger
+                    id: cambio_temp
+                  - condition: numeric_state
+                    entity_id: !input temp_sensors
+                    below: !input temp_low
+        sequence:
+          - service: script.turn_on
+            target:
+              entity_id: !input dehumid_script
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input dehumid_on_boolean
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input clima_on_boolean
+
+          - choose:
+              - conditions:
+                  - condition: device
+                    device_id: !input notify_device
+                sequence:
+                  - service: notify.mobile_app_{{ device_attr(notify_device, 'name') | lower | replace(' ', '_') }}
+                    data:
+                      message: "💧 Deumidificatore attivato"
+                      title: "Clima automatico"
